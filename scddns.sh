@@ -57,28 +57,28 @@ CUR_IP=`curl -s http://ipcheck.ieserver.net/`
 LAST_IP=`cat lastip.txt`
 
 if [ -z ${CUR_IP} ]; then
-  logger "IP cannot detect" 
+  logger "[ERROR] Failed to look up global IP address." 
   logger "===== END ====="
   exit 1
 fi
 
 if [ "${CUR_IP}" = "${LAST_IP}" ]; then
-  echo "IP not changed: ${CUR_IP}"
+  echo "[INFO] Global IP address is not changed. (${CUR_IP})"
   logger "===== END ====="
   exit 2
 fi
 
 SC_IP=`get_scdns_ip`
-logger "sakura_ip: $SC_IP"
+logger "[INFO] Current A record: $SC_IP"
 if [ "${CUR_IP}" = "${SC_IP}" ]; then
-  logger "IP is already set."
+  logger "[INFO] No need to update A record."
   logger "===== END ====="
   exit 3
 fi
 
-logger "Updating Sakura DNS"
+logger "[INFO] Updating A record"
 RES=`set_scdns_ip $CUR_IP`
-logger "Result: $RES"
+logger "[INFO] Result: $RES"
 
 echo "${CUR_IP}" > lastip.txt
 logger "===== END ====="
