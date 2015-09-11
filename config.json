@@ -1,0 +1,10 @@
+{
+	"token": "###your token###", 
+	"secret": "###your secret###", 
+	"zone": "is1a", 
+	"ddns": {
+		"resource_id": "###dns resource id###",
+		"hostname": "###your hostname###",
+		"ttl": "600"
+	}
+}
