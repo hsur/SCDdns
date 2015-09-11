@@ -63,7 +63,7 @@ if [ -z ${CUR_IP} ]; then
 fi
 
 if [ "${CUR_IP}" = "${LAST_IP}" ]; then
-  echo "[INFO] Global IP address is not changed. (${CUR_IP})"
+  logger "[INFO] Global IP address is not changed. (${CUR_IP})"
   logger "===== END ====="
   exit 2
 fi
@@ -80,5 +80,5 @@ logger "[INFO] Updating A record"
 RES=`set_scdns_ip $CUR_IP`
 logger "[INFO] Result: $RES"
 
-echo "${CUR_IP}" > lastip.txt
+echo -n "${CUR_IP}" > lastip.txt
 logger "===== END ====="
