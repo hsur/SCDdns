@@ -26,12 +26,42 @@ sa_api(){
 }
 
 get_scdns_ip(){
-  sa_api "/commonserviceitem/${DNS_RESOURCE_ID}" "GET" "" - | json 'CommonServiceItem.Settings.DNS.ResourceRecordSets[0].RData'
+  sa_api "/commonserviceitem/${DNS_RESOURCE_ID}" "GET" "" - \
+  | json -0 "CommonServiceItem.Settings.DNS.ResourceRecordSets" \
+  | json -0 -c "this.Name == '$DNS_HOSTNAME'" '0.RData'
+
   return ${PIPESTATUS[0]} 
 }
 
 set_scdns_ip(){
-  sa_api "/commonserviceitem/${DNS_RESOURCE_ID}" "PUT" "{'CommonServiceItem':{'Settings':{'DNS':{'ResourceRecordSets':[{'Name':'$DNS_HOSTNAME','Type':'A','RData':'$1','TTL':$DNS_TTL}]}}}}" - | json Success
+
+  DNS_CONF=`sa_api "/commonserviceitem/${DNS_RESOURCE_ID}" "GET" "" - \
+  | json -0 -A -e "
+  for( var i in this ){
+    if( i == 'CommonServiceItem' ){ continue; }
+    delete this[i];
+  }
+  for( var i in this.CommonServiceItem ){
+    if( i == 'Settings' ){ continue; }
+    delete this.CommonServiceItem[i]
+  }
+  var rr = this.CommonServiceItem.Settings.DNS.ResourceRecordSets;
+  var updated = false;
+  for( var i = 0; i < rr.length ; i++){
+    if(rr[i].Name != '$DNS_HOSTNAME' ){ continue; }
+    rr[i].RData = '$1';
+    rr[i].TTL = $DNS_TTL;
+    updated = true;
+  }
+  if( !updated ){
+     rr.push({'Name':'$DNS_HOSTNAME','Type':'A','TTL':$DNS_TTL,'RData':'$1'})
+  }
+  "`
+  if [ $? -ne 0 ] ; then
+    return 1
+  fi
+
+  sa_api "/commonserviceitem/${DNS_RESOURCE_ID}" "PUT" "${DNS_CONF}" - | json Success
   return ${PIPESTATUS[0]}
 }
 
@@ -69,6 +99,12 @@ if [ "${CUR_IP}" = "${LAST_IP}" ]; then
 fi
 
 SC_IP=`get_scdns_ip`
+if [ $? -ne 0 ] ; then
+  logger "[ERROR] Failed to look up SC DNS."
+  logger "===== END ====="
+  return 1
+fi
+
 logger "[INFO] Current A record: $SC_IP"
 if [ "${CUR_IP}" = "${SC_IP}" ]; then
   logger "[INFO] No need to update A record."
@@ -78,6 +114,11 @@ fi
 
 logger "[INFO] Updating A record"
 RES=`set_scdns_ip $CUR_IP`
+if [ $? -ne 0 ] ; then
+  logger "[ERROR] Failed to update SC DNS."
+  logger "===== END ====="
+  return 1
+fi
 logger "[INFO] Result: $RES"
 
 echo -n "${CUR_IP}" > lastip.txt
