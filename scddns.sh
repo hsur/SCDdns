@@ -81,7 +81,7 @@ read SEC_TOKEN SEC_SECRET SC_ZONE DNS_RESOURCE_ID DNS_HOSTNAME DNS_TTL< <( json 
 logger "===== START ====="
 TIMESTAMP="`date "+%Y%m%d"`"
 
-CUR_IP=`curl -s http://ipcheck.ieserver.net/`
+CUR_IP=`curl -s http://ieserver.net/ipcheck.shtml`
 #CUR_IP=`curl -s https://httpbin.org/ip | json origin`
 #CUR_IP=`curl -s http://ifconfig.me/all.json | json ip_addr`
 LAST_IP=`cat lastip.txt`
